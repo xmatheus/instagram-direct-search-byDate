@@ -7,7 +7,7 @@
 		{
 			"matches": ["https://www.instagram.com/direct/inbox/"],
 			"css": ["styles.css"],
-			"js": ["js/index.js", "js/show.js"]
+			"js": ["index.js"]
 		}
 	]
 }
