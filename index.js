@@ -111,19 +111,19 @@ const createLabelstoKeyworlds = (keyworlds) => {
 	return label;
 };
 
-const createLabelstoKeyworldsResetLayout = (keyworlds) => {
-	const label = document.createElement("span");
-	label.innerText = keyworlds.toLowerCase();
-	label.className = "labelKeyworlds";
-	label.title = "clique para excluir";
+const compareDateInputDates = (dateO, DateT) => {
+	console.log(dateO, DateT);
+	D_1 = dateO.split("/");
+	D_2 = DateT.split("/");
 
-	label.addEventListener("click", () => {
-		Glkeyworlds = Glkeyworlds.filter((item) => {
-			return item !== label.innerText.toLocaleLowerCase();
-		});
-		label.parentNode.removeChild(label);
-	});
-	return label;
+	let d1 = new Date(D_1[2], parseInt(D_1[1]) - 1, D_1[0]);
+	let d2 = new Date(D_2[2], parseInt(D_2[1]) - 1, D_2[0]);
+
+	if (d1 > d2) {
+		return true;
+	} else {
+		return false;
+	}
 };
 
 const createLayout = () => {
@@ -133,55 +133,56 @@ const createLayout = () => {
 
 	if (div) {
 		const mainDiv = document.createElement("div");
-		const oneDiv = document.createElement("div");
+		const oneDateDiv = document.createElement("div");
+		const secDateDiv = document.createElement("div");
+		const maxChatsDiv = document.createElement("div");
+		const subDatediv = document.createElement("div");
+		const subTwoDatediv = document.createElement("div");
 		const secDiv = document.createElement("div");
 		const containerInputs = document.createElement("div");
 		const containerKeyworlds = document.createElement("div");
-		const gridLayout = document.createElement("div");
 
-		oneDiv.className = "containerOne";
+		subDatediv.className = "containerOne";
+		subTwoDatediv.className = "containerOne";
 		secDiv.className = "containerOne";
+		oneDateDiv.className = "containerDate";
+		secDateDiv.className = "containerDate";
+		maxChatsDiv.className = "containerDate";
+
 		containerInputs.className = "containerInputs";
 		containerKeyworlds.className = "containerKeyworlds";
-		gridLayout.className = "gridLayout";
 
-		const myTextarea = document.createElement("input");
-		myTextarea.type = "date";
-		// myTextarea.placeholder = "Ex.: Rua alameda";
+		const inputDateOne = document.createElement("input");
+		inputDateOne.type = "date";
+
+		const inputDateTwo = document.createElement("input");
+		inputDateTwo.type = "date";
+		// inputDateOne.placeholder = "Ex.: Rua alameda";
 
 		const myButton = document.createElement("button");
 		myButton.innerText = "+";
+
+		const myButtonDate = document.createElement("button");
+		myButtonDate.innerText = "+";
 
 		const myTextareatwo = document.createElement("textarea");
 		myTextareatwo.placeholder = "Ex.: 10";
 		myTextareatwo.classList.add("textAreatwo");
 
 		const myButtontwo = document.createElement("button");
-		myButtontwo.innerText = "definir";
+		myButtontwo.innerText = "+";
 
 		const buttonSearch = document.createElement("button");
 		buttonSearch.innerText = "Buscar";
 		buttonSearch.className = "buttonSearch";
 
-		const spanOne = document.createElement("span");
+		const spanDateOne = document.createElement("span");
+		const spanDateTwo = document.createElement("span");
 		const spanTwo = document.createElement("span");
 
-		spanOne.innerText =
-			"Add as palavras para serem procuradas(uma por vez, ou uma frase)";
-		spanTwo.innerText =
-			"Coloque a quantidade de conversas que você deseja conferir";
-
-		myButton.addEventListener("click", () => {
-			if (myTextarea.value) {
-				let result = createLabelstoKeyworlds(myTextarea.value);
-				if (result) {
-					myTextarea.value = "";
-					gridLayout.appendChild(result);
-				}
-
-				// console.log(Glkeyworlds);
-			}
-		});
+		spanDateOne.innerText = "Data inicial";
+		spanDateTwo.innerText = "Data final";
+		spanTwo.innerText = "Quantidade de conversas para conferir";
 
 		myButtontwo.addEventListener("click", () => {
 			if (myTextareatwo.value) {
@@ -193,39 +194,66 @@ const createLayout = () => {
 			}
 		});
 
+		myButton.addEventListener("click", () => {
+			if (inputDateOne.value) {
+				console.log(inputDateOne.value);
+				let iday = inputDateOne.value.split("-")[2];
+				let imonth = inputDateOne.value.split("-")[1];
+				let iyear = inputDateOne.value.split("-")[0];
+				dateCompare.start = iday + "/" + imonth + "/" + iyear;
+				console.log(dateCompare);
+			}
+		});
+
+		myButtonDate.addEventListener("click", () => {
+			if (inputDateTwo.value) {
+				console.log(inputDateOne.value);
+				let iday = inputDateTwo.value.split("-")[2];
+				let imonth = inputDateTwo.value.split("-")[1];
+				let iyear = inputDateTwo.value.split("-")[0];
+				dateCompare.end = iday + "/" + imonth + "/" + iyear;
+				console.log(dateCompare);
+			}
+		});
+
 		buttonSearch.addEventListener("click", () => {
-			if (Glkeyworlds.length === 0) {
-				alert("Sem palavra pra buscar o algoritmo não roda");
+			if (!dateCompare.start || !dateCompare.end === 0) {
+				alert("Sem duas datas pra comparar o algoritmo não roda");
+			} else if (
+				compareDateInputDates(dateCompare.start, dateCompare.end)
+			) {
+				alert("Data final menor que a inicial?!");
 			} else {
 				Play();
 			}
 		});
 
-		if (Glkeyworlds.length > 0) {
-			Glkeyworlds.map((key) => {
-				let result = createLabelstoKeyworldsResetLayout(key);
-				if (result) {
-					gridLayout.appendChild(result);
-				}
-			});
-		}
+		subDatediv.appendChild(myButton);
+		subDatediv.appendChild(inputDateOne);
 
-		containerKeyworlds.appendChild(gridLayout);
+		subTwoDatediv.appendChild(myButtonDate);
+		subTwoDatediv.appendChild(inputDateTwo);
 
-		oneDiv.appendChild(myButton);
-		oneDiv.appendChild(myTextarea);
+		secDiv.appendChild(myButtontwo); // button definir
+		secDiv.appendChild(myTextareatwo); // input de maxChats
 
-		secDiv.appendChild(myButtontwo);
-		secDiv.appendChild(myTextareatwo);
+		oneDateDiv.appendChild(spanDateOne);
+		oneDateDiv.appendChild(subDatediv); //button and input type date
 
-		containerInputs.appendChild(spanOne);
-		containerInputs.appendChild(oneDiv);
-		containerInputs.appendChild(spanTwo);
-		containerInputs.appendChild(secDiv);
+		secDateDiv.appendChild(spanDateTwo);
+		secDateDiv.appendChild(subTwoDatediv); //button and input type date
+
+		maxChatsDiv.appendChild(spanTwo);
+		maxChatsDiv.appendChild(secDiv);
+
+		containerInputs.appendChild(oneDateDiv);
+		containerInputs.appendChild(secDateDiv);
+		containerInputs.appendChild(maxChatsDiv);
+		// containerInputs.appendChild(spanTwo);
 		containerInputs.appendChild(buttonSearch);
 
 		mainDiv.appendChild(containerInputs);
-		mainDiv.appendChild(containerKeyworlds);
+		// mainDiv.appendChild(containerKeyworlds);
 
 		mainDiv.className = "extensionContainer";
 		div.parentNode.insertBefore(mainDiv, div);
@@ -539,15 +567,14 @@ const taskResolution = (people) => {
 					setTimeout(() => (scrollEnd = true), 600);
 					setTimeout(() => {
 						resolve("conclui");
-					}, 800);
+					}, 200);
 					clearInterval(scrollinterval);
-					console.log("terminamo");
+					console.log("[x] scroll end");
 				} else {
-					console.log("Ta indo");
-
 					scrollChat[0].scrollTop = scrollChat[0].scrollTop * -1;
 				}
 			} catch (error) {
+				console.log("[x] erro scroll");
 				reject("nao conclui");
 			}
 		}, 1500);
@@ -579,7 +606,7 @@ async function Play() {
 		if (scrollEnd) {
 			if (listChats[i]) {
 				//listChats[i] sendo att a cada 500ms
-				console.log(i, scrollEnd, listChats[i]);
+				// console.log(i, scrollEnd, listChats[i]);
 
 				people = await listChats[i].querySelector(
 					"._7UhW9.xLCgt.MMzan.KV-D4.fDxYl"
@@ -604,7 +631,7 @@ async function Play() {
 				// playTwo
 				// 	.then(() => {
 				if (scrollEnd) {
-					console.log("Dentro da flag");
+					// console.log("Dentro da flag");
 					// i = i - 1; //instagram att os nodes, preciso voltar uma posicao para nao pular ninguem
 					// flag = true;
 					if (visited.length === GlmaxChats) {
