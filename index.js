@@ -1,13 +1,13 @@
-let Glkeyworlds = []; //palavras que o user quer buscar
 let GlmaxChats = 20; //valor padrao quantidade de chats a serem abertos
-let Glmatch = {};
 let listChats = null;
-let end = false;
-let scrollEnd = true;
-let clientUser = null;
+let end = false; //um set timeout foi despachado para o final do algoritmo(varias condicoes para o final do algoritmo)
+let scrollEnd = true; //final do scroll das conversas
+let clientUser = null; //@ do usuario da extensao
+let clientUserMsgTotal = 0;
+let peopleMsgTotal = 0;
 
 let dateCompare = {
-	start: "01/12/2019",
+	start: "01/12/2019", //		default: dia/mes/ano
 	end: "22/04/2020",
 };
 
@@ -46,33 +46,16 @@ const setDoneDayofWeek = () => {
 	}
 };
 setDoneDayofWeek();
+console.log({ week });
 
 const getClientUser = () => {
 	let a = document.querySelector("._2dbep.qNELH.kIKUG");
 	if (a) {
 		clientUser = a.href.split(".com/")[1].split("/")[0];
 	}
-
-	// console.log(clientUser);
 };
 
 getClientUser();
-// console.log({ week });
-
-// let month = {
-// 	January: "Janeiro",
-// 	February: "Fevereiro",
-// 	March: "Março",
-// 	April: "Abril",
-// 	May: "Maio",
-// 	June: "Junho",
-// 	July: "Julho",
-// 	August: "Agosto",
-// 	September: "Setembro",
-// 	October: "Outubro",
-// 	November: "Novembro",
-// 	December: "Dezembro",
-// };
 
 let month = {
 	January: 1,
@@ -87,28 +70,6 @@ let month = {
 	October: 10,
 	November: 11,
 	December: 12,
-};
-
-const createLabelstoKeyworlds = (keyworlds) => {
-	const label = document.createElement("span");
-	label.innerText = keyworlds;
-	label.className = "labelKeyworlds";
-	label.title = "clique para excluir";
-
-	if (!Glkeyworlds.includes(keyworlds.toLowerCase())) {
-		Glkeyworlds.push(keyworlds.toLowerCase());
-	} else {
-		alert("Opa, tu ja inseriu essa");
-		return null;
-	}
-
-	label.addEventListener("click", () => {
-		Glkeyworlds = Glkeyworlds.filter((item) => {
-			return item !== label.innerText.toLocaleLowerCase();
-		});
-		label.parentNode.removeChild(label);
-	});
-	return label;
 };
 
 const compareDateInputDates = (dateO, DateT) => {
@@ -196,7 +157,6 @@ const createLayout = () => {
 
 		myButton.addEventListener("click", () => {
 			if (inputDateOne.value) {
-				console.log(inputDateOne.value);
 				let iday = inputDateOne.value.split("-")[2];
 				let imonth = inputDateOne.value.split("-")[1];
 				let iyear = inputDateOne.value.split("-")[0];
@@ -207,7 +167,6 @@ const createLayout = () => {
 
 		myButtonDate.addEventListener("click", () => {
 			if (inputDateTwo.value) {
-				console.log(inputDateOne.value);
 				let iday = inputDateTwo.value.split("-")[2];
 				let imonth = inputDateTwo.value.split("-")[1];
 				let iyear = inputDateTwo.value.split("-")[0];
@@ -292,14 +251,13 @@ let updateLoop = setInterval(async () => {
 const createCsv = (userChat, msgs) => {
 	if (msgs.length > 0) {
 		let csv = "user, data, mensagem\n";
-
 		msgs.map((key) => {
 			csv +=
 				key.user.split(",").join(" ") +
 				"," +
 				key.date.split(",").join(" ") +
 				"," +
-				key.span.split(",").join(" ");
+				key.span.split(/,|\n/).join(" ");
 			csv += "\n";
 		});
 
@@ -310,15 +268,26 @@ const createCsv = (userChat, msgs) => {
 		hiddenElement.click();
 	}
 };
+const createCsvtotalMsg = () => {
+	let csv =
+		"Mensagens enviada, Mensagens recebidas, Total de coversas verificadas\n";
+	csv += clientUserMsgTotal + "," + peopleMsgTotal + "," + GlmaxChats + "\n";
+
+	let hiddenElement = document.createElement("a");
+	hiddenElement.href = "data:text/csv;charset=utf-8," + encodeURI(csv);
+	hiddenElement.target = "_blank";
+	hiddenElement.download = `result-${dateCompare.start}-ate-${dateCompare.end}.csv`;
+	hiddenElement.click();
+};
 
 const endIntervalandExit = (intervals) => {
 	if (intervals) {
 		if (!end) {
+			createCsvtotalMsg();
 			intervals.forEach((element) => {
 				clearInterval(element);
 			});
-			// console.log(Glmatch);
-			// createCsv();
+
 			console.log("[x] A busca terminou. Adeus.");
 		}
 	} else {
@@ -338,18 +307,34 @@ function convertTo24Hour(time) {
 
 const filterDate = (date) => {
 	let splitDate = date.split(" ");
+	let nowDateO = new Date();
 
 	if (splitDate.length === 2) {
+		if (
+			splitDate[0]
+				.toLowerCase()
+				.includes(Arrayweek[nowDateO.getDay()].toLowerCase())
+		) {
+			//arrumando erro de data do instagram
+			nowDateO.setDate(nowDateO.getDate() - 7);
+			let daynowO =
+				nowDateO.getUTCDate() +
+				"/" +
+				(nowDateO.getUTCMonth() + 1) +
+				"/" +
+				nowDateO.getUTCFullYear();
+
+			return {
+				dateFiltred: daynowO,
+				hour: convertTo24Hour(splitDate[1].toLowerCase()),
+			};
+		}
+
 		if (week[splitDate[0]]) {
 			return {
 				dateFiltred: week[splitDate[0]].dayofweek,
 				hour: convertTo24Hour(splitDate[1].toLowerCase()),
 			};
-			// return (
-			// 	week[splitDate[0]].dayofweek +
-			// 	" " +
-			// 	convertTo24Hour(splitDate[1].toLowerCase())
-			// );
 		} else {
 			let now = new Date();
 			let daynow =
@@ -358,7 +343,6 @@ const filterDate = (date) => {
 				(now.getUTCMonth() + 1) +
 				"/" +
 				now.getUTCFullYear();
-			// console.log("2");
 			return {
 				dateFiltred: daynow,
 				hour: convertTo24Hour(
@@ -368,19 +352,12 @@ const filterDate = (date) => {
 		}
 	} else {
 		if (week[splitDate[0]]) {
-			// console.log(week[splitDate[0]].dayofweek);
-			// console.log("3");
 			return {
 				dateFiltred: week[splitDate[0]].dayofweek,
 				hour: convertTo24Hour(
 					splitDate[1] + splitDate[2].toLowerCase()
 				),
 			};
-			// return (
-			// 	week[splitDate[0]].dayofweek +
-			// 	" " +
-			// 	convertTo24Hour(splitDate[1] + splitDate[2].toLowerCase())
-			// );
 		} else if (splitDate[0].includes("Yesterday")) {
 			let dateNow = new Date();
 			dateNow.setDate(dateNow.getDate() - 1);
@@ -391,18 +368,13 @@ const filterDate = (date) => {
 				(dateNow.getUTCMonth() + 1) +
 				"/" +
 				dateNow.getUTCFullYear();
-			// console.log("4");
+
 			return {
 				dateFiltred: daynow,
 				hour: convertTo24Hour(
 					splitDate[1] + splitDate[2].toLowerCase()
 				),
 			};
-			// 	return (
-			// 	daynow +
-			// 	" " +
-			// 	convertTo24Hour(splitDate[1] + splitDate[2].toLowerCase())
-			// );
 		} else {
 			let nowMoth = month[splitDate[0]];
 			let nowDay = splitDate[1].split(",")[0];
@@ -411,12 +383,10 @@ const filterDate = (date) => {
 			let nowHour = convertTo24Hour(
 				splitDate[3] + splitDate[4].toLowerCase()
 			);
-			// console.log("5");
 			return {
 				dateFiltred: nowDay + "/" + nowMoth + "/" + nowYear,
 				hour: nowHour,
 			};
-			// return nowMoth + "/" + nowDay + "/" + nowYear + " " + nowHour;
 		}
 	}
 };
@@ -430,7 +400,7 @@ const compareDate = (date) => {
 	var d2 = new Date(D_2[2], parseInt(D_2[1]) - 1, D_2[0]);
 	var d3 = new Date(D_3[2], parseInt(D_3[1]) - 1, D_3[0]);
 
-	if (d3 > d1 && d3 < d2) {
+	if (d3 >= d1 && d3 <= d2) {
 		return true;
 	} else {
 		return false;
@@ -461,11 +431,6 @@ const getMensages = async (people) => {
 	let containerChat = await document.querySelector(".VUU41");
 	let allDivs = null;
 	let span = "";
-	// let peopleMessages = {
-	// 	user: null,
-	// 	date: null,
-	// 	msg: null,
-	// };
 	let peopleMessages = [];
 	let whoSend = null;
 
@@ -486,42 +451,26 @@ const getMensages = async (people) => {
 			)
 		) {
 			if (subContainer.date !== null) {
-				// searchInText(subContainer.spans, keyFilter);
-				// peopleMessages.msg.push(subContainer);
-				// console.log(subContainer);
 				subContainer = {
 					date: null,
 					spans: [],
 				};
 			}
-			let { dateFiltred, hour } = filterDate(allDivs[j].innerText);
+			let { dateFiltred } = filterDate(allDivs[j].innerText);
 
 			subContainer.date = dateFiltred;
 		} else {
 			span = allDivs[j].innerText;
 			span = span.toLowerCase();
 			if (span) {
-				// console.log(span);
-				Glkeyworlds.map((key) => {
-					span.includes(key)
-						? Glmatch[key].push({
-								date: subContainer.date,
-								name: people,
-						  })
-						: null;
-				});
-
 				if (compareDate(subContainer.date)) {
 					if (verifywhoSend(allDivs[j])) {
 						whoSend = clientUser;
+						clientUserMsgTotal += 1;
 					} else {
 						whoSend = people;
+						peopleMsgTotal += 1;
 					}
-
-					// console.log(
-					// 	`send by${whoSend}  \n Date => ${subContainer.date} \n msg => ${dateCompare}`
-					// );
-					// console.log("Mensagem entre a data", span);
 
 					peopleMessages.push({
 						user: whoSend,
@@ -531,43 +480,69 @@ const getMensages = async (people) => {
 				}
 			}
 		}
-		if (subContainer.date === null || j === allDivs.length - 1) {
-			// peopleMessages.msg.push(subContainer);
-		}
 	}
 	createCsv(people, peopleMessages);
-	// console.log(subContainer);
 };
 
-// const scrollMessage = new Promise(function (resolve, reject, people) {
-// 	let scrollinterval = setInterval(() => {
-// 		let scrollChat = document.querySelectorAll(".frMpI.-sxBV");
-// 		if (scrollChat[0].scrollTop === scrollChat[0].scrollTop * -1) {
-// 			clearInterval(scrollinterval);
-// 			scrollEnd = true;
-// 			getMensages(people);
-// 			console.log("terminamo");
-// 			resolve();
-// 		} else {
-// 			console.log("Ta indo");
+const getMensagesAndCompareFirstDate = () => {
+	let containerChat = document.querySelector(".VUU41");
+	let allDivs = null;
 
-// 			scrollChat[0].scrollTop = scrollChat[0].scrollTop * -1;
-// 		}
-// 	}, 600);
-// });
+	const cmpDates = (dateO, DateT) => {
+		D_1 = dateO.split("/");
+		D_2 = DateT.split("/");
 
-const taskResolution = (people) => {
-	scrollEnd = false;
-	return new Promise((resolve, reject) => {
+		let d1 = new Date(D_1[2], parseInt(D_1[1]) - 1, D_1[0]);
+		let d2 = new Date(D_2[2], parseInt(D_2[1]) - 1, D_2[0]);
+
+		if (d1 < d2) {
+			return true;
+		} else {
+			return false;
+		}
+	};
+
+	if (containerChat) {
+		allDivs = containerChat.querySelectorAll(
+			"._7UhW9.PIoXz.MMzan._0PwGv.fDxYl.l4b0S, ._7UhW9.xLCgt.MMzan.KV-D4.p1tLr.hjZTB"
+		);
+	}
+
+	let lastDate = null;
+	if (allDivs) {
+		for (let j = 0; j < allDivs.length; j++) {
+			if (
+				/((1[0-2]|0?[1-9]):([0-5][0-9]) ?([AaPp][Mm]))/.test(
+					allDivs[j].innerText
+				)
+			) {
+				let { dateFiltred } = filterDate(allDivs[j].innerText);
+				lastDate = dateFiltred;
+			}
+		}
+	}
+
+	if (lastDate) {
+		if (cmpDates(lastDate, dateCompare.start)) {
+			return false; // ultima date e menor que a primeira data de comparacao
+		} else {
+			return true; // ultima date e maior que a primeira data de comparacao
+		}
+	}
+	return true;
+};
+
+const scrollChattoTop = (people) => {
+	if (getMensagesAndCompareFirstDate()) {
+		scrollEnd = false;
+
 		const scrollinterval = setInterval(() => {
 			try {
 				let scrollChat = document.querySelectorAll(".frMpI.-sxBV");
 				if (scrollChat[0].scrollTop === scrollChat[0].scrollTop * -1) {
 					getMensages(people);
 					setTimeout(() => (scrollEnd = true), 600);
-					setTimeout(() => {
-						resolve("conclui");
-					}, 200);
+
 					clearInterval(scrollinterval);
 					console.log("[x] scroll end");
 				} else {
@@ -575,19 +550,12 @@ const taskResolution = (people) => {
 				}
 			} catch (error) {
 				console.log("[x] erro scroll");
-				reject("nao conclui");
 			}
 		}, 1500);
-	});
+	} else {
+		scrollEnd = true;
+	}
 };
-
-// function taskResolution(x) {
-// 	return new Promise((resolve) => {
-// 		setTimeout(() => {
-// 			resolve(x);
-// 		}, 4000);
-// 	});
-// }
 
 async function Play() {
 	let i = 0;
@@ -595,45 +563,22 @@ async function Play() {
 	let oldmaxHeight = 0;
 	let people = null;
 	end = false;
-	let playTwo = null;
-
-	Glkeyworlds.map((key) => {
-		Glmatch[key] = [];
-	});
-	// console.log(Glmatch);
 
 	let loop = setInterval(async function () {
 		if (scrollEnd) {
 			if (listChats[i]) {
-				//listChats[i] sendo att a cada 500ms
-				// console.log(i, scrollEnd, listChats[i]);
-
 				people = await listChats[i].querySelector(
 					"._7UhW9.xLCgt.MMzan.KV-D4.fDxYl"
 				).innerText;
 				if (!visited.includes(listChats[i].href)) {
 					if (visited.length + 1 <= GlmaxChats) {
 						visited.push(listChats[i].href);
-						// scrollEnd = false;
 						listChats[i].click();
-						// setTimeout(async () => {
-						playTwo = taskResolution(people);
-						// console.log(playTwo);
-						// getMensages(people);
-						// }, 900);
-						// i = i - 1; //instagram att os nodes, preciso voltar uma posicao para nao pular ninguem
+						scrollChattoTop(people);
 					}
 				}
-				// else {
-				// 	console.log("negado", people);
-				// }
 
-				// playTwo
-				// 	.then(() => {
 				if (scrollEnd) {
-					// console.log("Dentro da flag");
-					// i = i - 1; //instagram att os nodes, preciso voltar uma posicao para nao pular ninguem
-					// flag = true;
 					if (visited.length === GlmaxChats) {
 						//flag pro user definir o max de chats para verificar
 						setTimeout(() => {
@@ -679,12 +624,6 @@ async function Play() {
 					}
 					i++;
 				}
-				// })
-				// .catch(() => {
-				// 	alert("Erro no scroll das mensagens");
-				// 	endIntervalandExit([loop, updateLoop, verifyLayout]);
-				// 	end = true;
-				// });
 			}
 		}
 	}, 1000);
